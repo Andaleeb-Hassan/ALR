@@ -1,0 +1,186 @@
+---
+title: "CHAPTER 1 PROBLEMS"
+author: "Andaleeb Hassan"
+format: pdf
+---
+
+```{r,include=FALSE}
+library(tidyverse)
+library(alr4)
+library(GGally)
+library(broom)
+
+```
+
+# 1.1
+
+The predictor is $ppgdp$ and the response is $fertility$.
+
+# 1.2
+
+```{r}
+ggplot(UN11, mapping =aes(ppgdp,fertility))+
+  geom_point()+
+  ggtitle("fertility vs. ppgdp")+
+  theme_bw()
+```
+
+We can't see a linear association from the scatterplot and thus a straight line mean function is not appropriate.
+
+# 1.3
+
+```{r}
+ggplot( UN11, mapping =aes( log(ppgdp),log(fertility)))+
+  geom_point()+
+  ggtitle("log(fertility) vs. log(ppgdp)")+
+  theme_bw()
+```
+
+A simple linear regression model $E(\text{log}(fertility)|\textbf{log(ppgdp)}) = \beta_{0} + \beta_{1} \ \text{log}(ppgdp)$ seems plausible.
+
+# 2
+
+```{r}
+wblake%>%
+  group_by(Age)%>%
+  summarise(mean = mean(Length),
+            var  =  var(Length))
+```
+
+```{r}
+M1 <- ggplot( data = wblake,mapping = aes(Age,Length))+
+  #geom_point( shape = 21, size =2)+
+  ggtitle("Length~Age")+
+  #geom_smooth(se = FALSE,method = "lm")+
+  stat_summary(geom = "point",fun = "mean",col ="red")+
+  ylim(0,400)+
+  #stat_summary(geom =  "line",fun = "mean",col = "pink",linewidth = 1.5,
+               #linetype = "dashed")+
+  theme_bw()
+
+M2 <- ggplot( data = wblake,mapping = aes(Age,Length))+
+  geom_point( shape = 21, size =2)+
+  ggtitle("Length~Age")+
+  geom_smooth(se = FALSE,method = "lm")+
+  stat_summary(geom = "point",fun = "mean",col ="red")+
+  stat_summary(geom =  "line",fun = "mean",col = "pink",linewidth = 1.5,
+               linetype = "dashed")+
+  ylim(0,400)+
+  theme_bw()
+
+gridExtra::grid.arrange(M1,M2,ncol =2)
+```
+
+```{r}
+ggplot( data = wblake,mapping = aes(Age,Length))+
+  stat_summary(geom = "point",fun = "sd",col ="red")+
+  theme_bw()
+```
+
+The plot is not a null plot.
+
+# 3.1
+
+This is a time series data so simple linear regression wouldn't be adequate for modelling the data.
+
+```{r}
+
+ggplot(Mitchell,mapping = aes(Month,Temp))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+```
+
+```{r}
+data <- as_tibble(Mitchell) %>%
+  mutate(month = as.factor((Month%%12)+1))
+
+
+ggplot(data = data , mapping = aes(month,Temp))+
+  geom_point()+
+  theme_bw()
+
+```
+
+We can treat months as factors and fit the following regression model: $$
+ E(Temp | month) = \delta_0 + \delta_1 U_2+ \dotsb +\delta_{11} U_{12} .
+$$ Where, $$U_{i} =
+    \begin{cases}
+        1 & \text{if},\ \text{month = i} \ \qquad{i = 2,\dotsb,12 } \\
+        0 & \text{if},\ \text{month} \neq i
+    \end{cases}
+$$
+
+The fitted model:
+
+```{r}
+model <- lm(Temp~month,data)
+
+broom::tidy(model)%>%
+  select(1:2)%>%
+  mutate( estimate = round(estimate,3))
+
+```
+
+# 3.2
+
+```{r}
+
+ggplot(Mitchell,mapping = aes(Month,Temp))+
+  geom_point()+
+  #geom_line()+
+  coord_fixed(ratio =  1/4)+
+  theme_bw()
+```
+
+# 4 
+
+```{r}
+
+
+ggplot( data = oldfaith, mapping = aes(Duration,Interval))+
+  geom_point()+
+  geom_smooth(method = "lm",se =FALSE, col = "green4")+
+  theme_bw()
+```
+
+```{r}
+model <- lm(Interval~Duration,oldfaith)
+broom::tidy(model)%>%
+  select(1:3)
+```
+
+The fitted linear regression model:
+
+$$
+\hat{E} (Interval|Duration) = 33.99 + .18 \  Duration \ .
+$$
+
+
+# 5
+
+```{r}
+
+ggpairs(water[,-1],
+        title = "scatterplot matrix of water data",
+        upper = list(continuous = wrap("cor", size = 3)),
+        lower = list(continuous = wrap("smooth",se =FALSE,method ="lm")))+
+  theme_bw()
+```
+
+
+# 6 
+
+```{r}
+data <- Rateprof %>%
+  select(quality,clarity,helpfulness,easiness,raterInterest)
+ggpairs(data,
+        title = "scatterplot matrix of water data",
+        upper = list(continuous = wrap("cor", size = 3)),
+        lower = list(continuous = wrap("smooth",se =FALSE,method ="lm")))+
+  theme_bw()
+
+```
+
+
