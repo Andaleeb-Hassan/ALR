@@ -107,9 +107,9 @@ We can treat months as factors and fit the following regression model: $$
  E(Temp | month) = \delta_0 + \delta_1 U_2+ \dotsb +\delta_{11} U_{12} .
 $$ Where, $$U_{i} =
     \begin{cases}
-        1 & \text{if},\ \text{month = i} \ \qquad{i = 2,\dotsb,12 } \\
+        1 & \text{if},\ \text{month = i}  \\
         0 & \text{if},\ \text{month} \neq i
-    \end{cases}
+    \end{cases} \hspace{3cm} \left[i = 2, \cdots, 12\right]\nonumber\\[0.1cm] 
 $$
 
 The fitted model:
@@ -182,5 +182,6 @@ ggpairs(data,
   theme_bw()
 
 ```
+
 
 
