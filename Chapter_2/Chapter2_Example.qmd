@@ -1,0 +1,227 @@
+---
+title: "Chapter 2 Example"
+author: "Andaleeb Hassan"
+format: pdf
+editor: visual
+---
+
+```{r,include = FALSE}
+library(tidyverse)
+library(alr4)
+library(broom)
+library(kableExtra)
+```
+
+# Computing using user defined function 
+## Forbes's data
+
+User defined function:
+```{r}
+ 
+SLR <- function(x,y) {
+  n <- length(x)
+  x_bar <- mean(x)
+  y_bar <- mean(y)
+  
+  SXX <- sum((x-x_bar)**2)
+  SXY <- sum((x-x_bar)*(y-y_bar))
+  SYY <- sum((y-y_bar)**2)
+  
+  beta_1_hat <- SXY/SXX
+  beta_0_hat <- y_bar-(x_bar*beta_1_hat)
+  RSS <- SYY-(beta_1_hat)^2*SXX
+  RMS <- RSS/(n-2)
+  
+  se_beta1 <- sqrt(RMS/SXX)
+  se_beta0 <- sqrt(RMS*((1/n)+(x_bar^2/SXX)))
+  
+   R_2 <- 1-(RSS/SYY)
+   cov <- -RMS * (x_bar/SXX)
+ 
+  
+  return(list(x_bar = x_bar,
+              y_bar = y_bar,
+              SXX = SXX,
+              SXY = SXY,
+              SYY = SYY, 
+              beta_1_hat = beta_1_hat,
+              beta_0_hat= beta_0_hat,
+              RSS = RSS,
+              RMS = RMS,
+              se_beta1 = se_beta1,
+              se_beta0 = se_beta0,
+              n = n,
+              R_2 = R_2,
+              cov = cov
+  ))
+  
+}
+
+result <- SLR(Forbes$bp,Forbes$lpres)
+
+result[c(6,7)]
+
+```
+
+$$\hat{E}(lpres|bp) = -42.138 + 0.895 bp $$
+
+```{r}
+result$RSS
+result$RMS
+```
+confidence interval for $\beta_0$:
+
+```{r}
+result$se_beta0
+
+round(c(result$beta_0_hat-(qt(.95,result$n-2)*result$se_beta0),result$beta_0_hat+(qt(.95,result$n-2)*result$se_beta0)),2)
+```
+
+The 90% confidence interval is $-48.35 \leq \beta_0 \leq -35.93$.
+
+
+$$\begin{aligned}
+H_0 : & \beta_0 = -35 \\ 
+H_1 : & \beta_0 \neq -35
+\end{aligned}
+$$
+
+The test statistic :$$t = \frac{\hat\beta_0 - \beta_0}{se(\hat\beta_0|x_1,x_2, \cdots,x_n)}$$
+
+
+```{r}
+
+t = (result$beta_0_ha+35)/result$se_beta0
+min(2*pt(abs(t),result$n-2,lower.tail = FALSE),1)
+```
+Here, for the two sided test the p-value is $p = min\{1,p(t>|t_{cal}|)\}$.
+The p-value is approximately 0.05, providing evidence against the null hypothesis.
+
+Slope :
+
+$$\hat\beta_1 - t_{\frac{\alpha}{2},n-2} \ se(\hat\beta_1|x_1,x_2, \cdots,x_n) \leq \beta_1 \leq 
+\hat\beta_1 +  t_{\frac{\alpha}{2},n-2} \ se(\hat\beta_1|x_1,x_2, \cdots,x_n)
+$$
+\newline
+
+
+#  Predicted value and Fitted value 
+
+Prediction of value $y_*$  corresponding to $x_*$ which is yet to be observed . With assumption that the fitted model to the observed data can be used to predict for the new case.The point prediction would be:
+$$\tilde{y}_{*} = \hat{\beta}_0 + \hat{\beta_1} \ x_*  \hspace{3cm} x_* \  \text{is a new data point } $$
+The true value of $y_*$ is:
+$$y_* = \beta_0 + \beta_1 x_* + \epsilon_* \hspace{3cm} \epsilon \sim N(0, \sigma^2) $$
+
+The variance of $\tilde{y}_*$ would be the sum of variance due to random error $\epsilon$ and variance of the predicted parameters.
+
+
+$$Var(\tilde{y}_{*}|x_*) = \sigma^2  +\sigma^2 (\frac{1}{n}+\frac{(x_* -\bar{x})^2}{SXX}) $$
+
+The standard error of prediction:
+
+$$ se(\tilde{y_*}|x_*) = \hat{\sigma}(1+\frac{1}{n}+\frac{(x_*-\bar{x})^2}{SXX})^\frac{1}{2}  $$
+\newline 
+\newline
+
+For $x_* = 200$, we have, $\tilde{y_*} = 136.961$ and 
+$se(\tilde{y_*}|x_* = 200) = 0.393$
+
+
+```{r}
+c(round(136.961-.393*round(qt(.995,15),3),3),round(136.961+.393*round(qt(.995,15),2),3))
+```
+
+
+## Heights data
+ 
+```{r}
+ SLR(Heights$mheight,Heights$dheight)[c(6,7)]
+
+```
+For the model:
+
+$$\widetilde{dheight}_{*}=  E(dheight_* |mheight_*) = \beta_{0} + \beta_{1} mheight_* $$
+Similarly, 95% confidence interval for daughter's height for given mother's height can be calculated as following.
+
+$$\hat{\beta_0}+\hat{\beta_1} x_* \pm t_{.025,n-2}\times se(dheight_* |mheight_*) $$
+
+# In built function:
+
+
+```{r}
+model <- lm(lpres~bp,Forbes)
+
+```
+
+```{r}
+summary(model)[6]
+```
+
+```{r}
+broom::tidy(model)%>%
+mutate(p.value = scales::pvalue(p.value)) %>%
+  kbl(format = "latex", booktabs = T, 
+      digits = 3, caption = "Estimate of the model") %>%
+  kable_styling(latex_options = "hold_position")
+```
+
+Similarly,\newline
+$$\hat{E}(lpres|bp) = -42.138 + 0.895 bp$$
+The Confidence interval:
+```{r}
+confint(model,level = .9)
+```
+
+prediction:
+```{r}
+data <- tibble(bp = c(200))
+
+predict(model, newdata = data, level = .99,interval = "prediction")
+```
+
+
+# Residuals
+
+Residual analysis is used for model adequacy checking.
+
+```{r}
+
+model <- lm(dheight~mheight, data = alr4::Heights)
+
+
+ggplot(mapping = aes(model$fitted.values, model$residuals))+
+  geom_point()+
+  labs(title = "Residual plot",
+       x = "Fitted value", y  = "residual")+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  theme_bw()
+  
+```
+There is no pattern visible in the plot. Thus the assumptions are not violated.
+
+
+```{r}
+ model1 <- lm(lpres~bp, data = Forbes)
+ model2 <- lm(lpres~bp, data = Forbes[-12,])
+
+ tidy(model1)%>%
+   select(1:2) %>%
+   mutate(type = "model1")%>%
+   bind_rows(tidy(model2)%>%
+               select(1:2)%>%
+               mutate(type = "model2"))%>%
+    pivot_wider(id_cols = term, names_from = type, values_from = estimate) %>%
+   kbl(format = "latex", booktabs = TRUE, digits = 3, caption = "Model comparisons") %>% 
+  kable_styling(latex_options = "hold_position")
+```
+
+
+```{r}
+`model-1` <- lapply(SLR(Forbes$bp,Forbes$lpres),round,digit = 3 )
+`model-2` <- lapply(SLR(Forbes[-12,]$bp,Forbes[-12,]$lpres),round,digit = 3)
+
+cbind(`model-1`,`model-2`) %>%
+  kbl(format = "latex", booktabs = TRUE, digits = 3, caption = "Model comparisons") %>% 
+  kable_styling(latex_options = "hold_position")
+```
+
